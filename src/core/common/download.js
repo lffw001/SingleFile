@@ -96,6 +96,7 @@ async function downloadPage(pageData, options) {
 		defaultEditorMode: options.defaultEditorMode,
 		includeInfobar: options.includeInfobar,
 		openInfobar: options.openInfobar,
+		animateInfobar: options.animateInfobar,
 		warnUnsavedPage: options.warnUnsavedPage,
 		createRootDirectory: options.createRootDirectory,
 		selfExtractingArchive: options.selfExtractingArchive,
@@ -192,7 +193,7 @@ async function downloadPage(pageData, options) {
 					for (let blockIndex = 0; blockIndex * MAX_CONTENT_SIZE < pageData.content.length; blockIndex++) {
 						message.truncated = pageData.content.length > MAX_CONTENT_SIZE;
 						if (message.truncated) {
-							message.finished = (blockIndex + 1) * MAX_CONTENT_SIZE > pageData.content.length;
+							message.finished = (blockIndex + 1) * MAX_CONTENT_SIZE >= pageData.content.length;
 							message.content = pageData.content.substring(blockIndex * MAX_CONTENT_SIZE, (blockIndex + 1) * MAX_CONTENT_SIZE);
 						} else {
 							message.content = pageData.content;
@@ -258,9 +259,7 @@ async function sharePage(pageData, options) {
 			sharePageBar.hide();
 		} catch (error) {
 			sharePageBar.hide();
-			if (error.name === "AbortError") {
-				await sharePage(pageData, options);
-			} else {
+			if (error.name !== "AbortError") {
 				throw error;
 			}
 		}

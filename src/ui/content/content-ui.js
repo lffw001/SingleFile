@@ -38,6 +38,7 @@ const LOGS_CLASSNAME = "singlefile-logs";
 const LOGS_LINE_CLASSNAME = "singlefile-logs-line";
 const LOGS_LINE_TEXT_ELEMENT_CLASSNAME = "singlefile-logs-line-text";
 const LOGS_LINE_STATUS_ELEMENT_CLASSNAME = "singlefile-logs-line-icon";
+const LOGS_LINE_STATUS_DONE_CLASSNAME = "singlefile-logs-line-icon-done";
 const SINGLE_FILE_UI_ELEMENT_CLASS = singlefile.helper.SINGLE_FILE_UI_ELEMENT_CLASS;
 const SELECT_PX_THRESHOLD = 8;
 const CSS_PROPERTIES = new Set(Array.from(getComputedStyle(document.documentElement)));
@@ -99,9 +100,6 @@ function setVisible(visible) {
 function onStartPage(options, cancelSave) {
 	let maskElement = document.querySelector(MASK_TAGNAME);
 	if (!maskElement) {
-		if (options.logsEnabled) {
-			document.documentElement.appendChild(logsWindowElement);
-		}
 		if (options.shadowEnabled) {
 			const maskElement = createMaskElement();
 			if (options.progressBarEnabled) {
@@ -110,6 +108,10 @@ function onStartPage(options, cancelSave) {
 			if (!options.silent) {
 				createCancelButtonElement(maskElement, cancelSave);
 			}
+		}
+		if (options.logsEnabled) {
+			document.documentElement.appendChild(logsWindowElement);
+			showInTopLayer(logsWindowElement);
 		}
 		if (!options.silent) {
 			setCancelSaveShortcut(cancelSave);
@@ -474,6 +476,7 @@ function createMaskElement() {
 		let maskElement = document.querySelector(MASK_TAGNAME);
 		if (!maskElement) {
 			maskElement = createElement(MASK_TAGNAME, document.documentElement);
+			showInTopLayer(maskElement);
 			const shadowRoot = maskElement.attachShadow({ mode: "open" });
 			const styleElement = document.createElement("style");
 			styleElement.textContent = `
@@ -643,6 +646,10 @@ function createLogsWindowElement() {
 					text-align: center;
 					position: relative;
 					top: 1px;
+					color: black;
+				}
+				.${LOGS_LINE_STATUS_ELEMENT_CLASSNAME}.${LOGS_LINE_STATUS_DONE_CLASSNAME} {
+					color: #055000;
 				}
 				@media (prefers-color-scheme: dark) {
 					.${LOGS_CLASSNAME} {
@@ -651,6 +658,12 @@ function createLogsWindowElement() {
 					.${LOGS_LINE_CLASSNAME} {
 						color: #eeeeee;
 						background-color: #1c1b22;
+					}
+					.${LOGS_LINE_STATUS_ELEMENT_CLASSNAME} {
+						color: #eeeeee;
+					}
+					.${LOGS_LINE_STATUS_ELEMENT_CLASSNAME}.${LOGS_LINE_STATUS_DONE_CLASSNAME} {
+						color: #7dc67d;
 					}
 				}
 			`;
@@ -695,7 +708,7 @@ function updateLogLine(lineElement, textContent, textStatus) {
 	const textElement = lineElement.childNodes[0];
 	const statusElement = lineElement.childNodes[1];
 	textElement.textContent = textContent;
-	statusElement.style.setProperty("color", textStatus == "✓" ? "#055000" : "black");
+	statusElement.classList.toggle(LOGS_LINE_STATUS_DONE_CLASSNAME, textStatus == "✓");
 	if (textStatus == "✓") {
 		textElement.style.setProperty("opacity", ".5");
 		statusElement.style.setProperty("opacity", ".5");
@@ -766,4 +779,19 @@ function createElement(tagName, parentElement) {
 	CSS_PROPERTIES.forEach(property => element.style.setProperty(property, "initial", "important"));
 	element.style.setProperty("direction", UI_DIRECTION, "important");
 	return element;
+}
+
+function showInTopLayer(element) {
+	if (element.showPopover) {
+		try {
+			element.setAttribute("popover", "manual");
+			element.style.setProperty("position", "fixed", "important");
+			element.style.setProperty("top", "0", "important");
+			element.style.setProperty("left", "0", "important");
+			element.showPopover();
+			// eslint-disable-next-line no-unused-vars
+		} catch (error) {
+			element.removeAttribute("popover");
+		}
+	}
 }
